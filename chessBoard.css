@@ -1,0 +1,34 @@
+@charset "utf-8";
+
+body {
+    background-color: black; 
+}
+
+#chessBoard {
+    width: 600px;
+    height: 600px;
+    margin: auto;
+    display: grid;
+    grid-template-columns:  1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+    background-color: #8BA8F7;
+}
+
+img {
+    display:block;
+    margin: auto;
+    margin-top: 5px;
+    height: 90%;
+}
+
+p{
+    margin: 0;
+    max-height: 75px;
+    min-height: 75px;
+}
+
+
+.allowed {
+    box-shadow: inset 0 0 10px #000000,
+         inset 0 0 10px #00ff00;
+}
