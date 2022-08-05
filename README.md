@@ -1,6 +1,8 @@
 # chessBoard-game
 Chess game I am currently using as a learning experience
 
+All images came from chess-board.js.
+
 I got into programming in the summer of 2021 and wanted to do a fun project that could help expand my understanding of JavaScript.  Chess is very near and dear to my
 heart so I am trying to create a chess game using pure JavaScript.  
 
