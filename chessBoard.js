@@ -6,23 +6,23 @@
     const html = document.getElementsByTagName('html');
     const body = document.getElementsByTagName('body');
     const PIECES = {
-        'R' : 'img/wR.png',
-        'N' : 'img/wN.png',
-        'B' : 'img/wB.png',
-        'Q' : 'img/wQ.png',
-        'K' : 'img/wK.png',
-        'P' : 'img/wP.png',
-        'r' : 'img/bR.png',
-        'n' : 'img/bN.png',
-        'b' : 'img/bB.png',
-        'q' : 'img/bQ.png',
-        'k' : 'img/bK.png',
-        'p' : 'img/bP.png',
+        'R' : 'img/whiteRook.png',
+        'N' : 'img/whiteKnight.png',
+        'B' : 'img/whiteBishop.png',
+        'Q' : 'img/whiteQueen.png',
+        'K' : 'img/whiteKing.png',
+        'P' : 'img/whitePawn.png',
+        'r' : 'img/blackRook.png',
+        'n' : 'img/blackKnight.png',
+        'b' : 'img/blackBishop.png',
+        'q' : 'img/blackQueen.png',
+        'k' : 'img/blackKing.png',
+        'p' : 'img/blackPawn.png',
     }
     
-    //Used to tell whether a king can castle or not
-    let whiteKingMoved = 0;  
-    let blackKingMoved = 0;
+    //Variables used for determining if a King can castle and the sqaures used for castiling
+    let whiteKingMoved = false;  
+    let blackKingMoved = false;
     
     
     //Forsyth-Edwards Notation; lower case denotes black, uppercase denotes white and numbers denote number of empty squares
@@ -42,7 +42,7 @@
                 square.style.backgroundColor = '#E7ECF9';
             }
             square.className = 'square';
-            squareIndex++
+            squareIndex++;
         }
         
     }
@@ -73,6 +73,7 @@
     
     let whitePawnStart = new Array();
     let blackPawnStart = new Array();
+    //Used to determine if a pawn can move forward one or two spaces
     for(let i = 0; i< whitePawns.length; i++){
         let parent = whitePawns[i].parentNode;
         let parent2 = blackPawns[i].parentNode;
@@ -92,34 +93,34 @@
         e.target.style.touchAction = 'none';
         let parent = e.target.parentNode;
         let type = e.target.className;
-        if(type === "b" || type === 'B'){
-            legalBishopMove(e);
+        if(type.toLowerCase() === 'b'){
+            displayLegalBishopMove(e);
         }
-        if(type === "r" || type === 'R'){
-            legalRookMove(e);
+        if(type.toLowerCase() === 'r'){
+            displayLegalRookMove(e);
         }
-        if(type === "q" || type === 'Q'){
-            legalRookMove(e);
-            legalBishopMove(e);
+        if(type.toLowerCase() === 'q'){
+            displayLegalRookMove(e);
+            displayLegalBishopMove(e);
         }
-        if(type === "n" || type === 'N'){
-            legalKnightMove(e);
+        if(type.toLowerCase() === 'n'){
+            displayLegalKnightMove(e);
         }
-        if(type === "k" || type === 'K'){
-            legalKingMove(e);
+        if(type.toLowerCase() === 'k'){
+            displayLegalKingMove(e);
         }
-        if(type === "p" || type === 'P'){
-            legalPawnMove(e);
+        if(type.toLowerCase() === 'p'){
+            displayLegalPawnMove(e);
         }
         
         chessBoard.addEventListener('pointerup', dropPiece);
         chessBoard.addEventListener('pointermove', movePiece);
         
-        function legalBishopMove(e){
-            const vertical = e.target.parentElement.clientHeight
-            const horizontal = e.target.parentElement.clientWidth
-            let oldX = e.target.parentElement.getBoundingClientRect().left 
-            let oldY = e.target.parentElement.getBoundingClientRect().top 
+        function displayLegalBishopMove(e){
+            const vertical = e.target.parentElement.clientHeight;
+            const horizontal = e.target.parentElement.clientWidth;
+            let oldX = e.target.parentElement.getBoundingClientRect().left;
+            let oldY = e.target.parentElement.getBoundingClientRect().top;
             let westX = oldX - horizontal;
             let eastX = oldX + horizontal;
             let southY = oldY +vertical;
@@ -186,7 +187,7 @@
             
         }
         
-        function legalRookMove(e){
+        function displayLegalRookMove(e){
             const diagonal = e.target.parentElement.clientHeight; 
             let oldX = e.target.parentElement.getBoundingClientRect().left; 
             let oldY = e.target.parentElement.getBoundingClientRect().top; 
@@ -242,7 +243,7 @@
                 
         }
         
-        function legalKnightMove(e){
+        function displayLegalKnightMove(e){
             const diagonal = e.target.parentElement.clientHeight; 
             let oldX = e.target.parentElement.getBoundingClientRect().left; 
             let oldY = e.target.parentElement.getBoundingClientRect().top; 
@@ -314,7 +315,7 @@
             
         }
         
-        function legalKingMove(e){
+        function displayLegalKingMove(e){
             const vertical = e.target.parentElement.clientHeight;
             const horizontal = e.target.parentElement.clientWidth;
             let oldX = e.target.parentElement.getBoundingClientRect().left;
@@ -324,6 +325,8 @@
             let southY = oldY + horizontal;
             let northY = oldY - horizontal;
             let position;
+            let kingSideCastleSquare;
+            let queenSideCastleSquare;
             
             position = document.elementFromPoint(westX,southY);
             if(position !== null && position !== body[0] && position !== html[0]){
@@ -387,9 +390,130 @@
                 }
             }
             
+            //Whether a king can legally castle
+            if(type === 'K'){
+                if(whiteKingMoved === false){
+                    position = document.elementFromPoint(eastX,oldY);
+                    if(!position.hasChildNodes()){
+                        kingSideCastleSquare = document.elementFromPoint((eastX + horizontal),oldY)
+                        if(!kingSideCastleSquare.hasChildNodes()){
+                            kingSideCastleSquare.classList.add('allowed');
+                        }
+                    }
+                    position = document.elementFromPoint(westX,oldY);
+                    if(!position.hasChildNodes()){
+                        position = document.elementFromPoint(westX - horizontal,oldY);
+                        if(!position.hasChildNodes()){
+                            position = document.elementFromPoint(westX - (horizontal*2),oldY);
+                             if(!position.hasChildNodes()){
+                                queenSideCastleSquare = document.elementFromPoint(westX - horizontal,oldY);
+                                queenSideCastleSquare.classList.add('allowed');
+                             }
+                        }
+                    }
+                }
+            }
+            
+            if(type === 'k'){
+                if(blackKingMoved === false){
+                    position = document.elementFromPoint(eastX,oldY);
+                    if(!position.hasChildNodes()){
+                        kingSideCastleSquare = document.elementFromPoint((eastX + horizontal),oldY)
+                        if(!kingSideCastleSquare.hasChildNodes()){
+                            kingSideCastleSquare.classList.add('allowed');
+                        }
+                    }
+                    position = document.elementFromPoint(westX,oldY);
+                    if(!position.hasChildNodes()){
+                        position = document.elementFromPoint(westX - horizontal,oldY);
+                        if(!position.hasChildNodes()){
+                            position = document.elementFromPoint(westX - (horizontal*2),oldY);
+                            if(!position.hasChildNodes()){
+                                queenSideCastleSquare = document.elementFromPoint(westX - horizontal,oldY);
+                                queenSideCastleSquare.classList.add('allowed');
+                            }
+                        }
+                    }
+                }
+            }
+            
         }
         
-        function legalPawnMove(e){
+        //Whether or not a king has castling rights
+        function hasKingMoved(e, type, clone){
+            if(type === 'K'){
+                if(clone.parentNode !== e.target.parentNode){
+                    return whiteKingMoved = true;
+                }
+            }
+            if(type === 'k'){
+                if(clone.parentNode !== e.target.parentNode){
+                    return blackKingMoved = true;
+                }
+            }
+            
+            return false;
+        }
+        
+        function castleTheKing(e, clone){
+            const horizontal = e.target.parentElement.clientWidth;
+            const startSquare = e.target.parentElement;
+            const whiteKingSideCastleSquare = squares[62];
+            const whiteKingSideRookStartSquare = squares[63];
+            const whiteKingSideRookCastleSquare = squares[61];
+            const whiteQueenSideCastleSquare = squares[58];
+            const whiteQueenSideRookStartSquare = squares[56];
+            const whiteQueenSideRookCastleSquare = squares[59];
+            const blackKingSideCastleSquare = squares[6];
+            const blackKingSideRookStartSquare = squares[7];
+            const blackKingSideRookCastleSquare = squares[5];
+            const blackQueenSideCastleSquare = squares[2];
+            const blackQueenSideRookStartSquare = squares[0];
+            const blackQueenSideRookCastleSquare = squares[3];
+            let rookClone;
+            if(e.target.className === 'K'){
+                if(whiteKingMoved === true){
+                    console.log('Can\'t castle');
+                    return
+                }
+                
+                if(clone.parentElement === whiteKingSideCastleSquare){
+                    rookClone = whiteKingSideRookStartSquare.children[0].cloneNode(true);
+                    whiteKingSideRookStartSquare.children[0].remove();
+                    whiteKingSideRookCastleSquare.append(rookClone);
+                }
+                
+                if(clone.parentElement === whiteQueenSideCastleSquare){
+                    rookClone = whiteQueenSideRookStartSquare.children[0].cloneNode(true);
+                    whiteQueenSideRookStartSquare.children[0].remove();
+                    whiteQueenSideRookCastleSquare.append(rookClone);
+                }
+                
+            }
+            
+            if(e.target.className === 'k'){
+                if(blackKingMoved === true){
+                    console.log('Can\'t castle');
+                    return
+                }
+                
+                if(clone.parentElement === blackKingSideCastleSquare){
+                    rookClone = blackKingSideRookStartSquare.children[0].cloneNode(true);
+                    blackKingSideRookStartSquare.children[0].remove();
+                    blackKingSideRookCastleSquare.append(rookClone);
+                }
+                
+                if(clone.parentElement === blackQueenSideCastleSquare){
+                    rookClone = blackQueenSideRookStartSquare.children[0].cloneNode(true);
+                    blackQueenSideRookStartSquare.children[0].remove();
+                    blackQueenSideRookCastleSquare.append(rookClone);
+                }
+                
+            }
+            
+        }
+        
+        function displayLegalPawnMove(e){
             const vertical = e.target.parentElement.clientHeight;
             const horizontal = e.target.parentElement.clientWidth;
             let hasMoved = e.target.classList;
@@ -481,10 +605,10 @@
             }
 
         }
-                
         
+                     
         function checkCapture(e, position){ 
-            const regex = new RegExp(/[A-Z]/)  //Checking for uppercase letter to denote if white piece
+            const regex = new RegExp(/[A-Z]/)  //Checking for uppercase letter to denote if its a white piece
             let yourPiece = e.target.className;
             let captureType = position.children[0].className;
             if(regex.test(yourPiece) === regex.test(captureType)){
@@ -510,7 +634,14 @@
             }else{
                 position[1].appendChild(clone);
             }
-            capturePiece(e, position, clone)
+            capturePiece(e, position, clone);
+            castleTheKing(e, clone);
+            if(type === 'K'){
+                hasKingMoved(e, type, clone);
+            }
+            if(type === 'k'){
+                hasKingMoved(e, type, clone);
+            }
             e.target.remove();
             chessBoard.removeEventListener('pointermove', movePiece);
             chessBoard.removeEventListener('pointerup', dropPiece);
