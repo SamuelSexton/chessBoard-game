@@ -1,5 +1,5 @@
 ( () => {
-    "use strict;"
+    'use strict;'
     ///Constant Variables
     const chessBoard = document.getElementById('chessBoard');
     const squares = document.getElementsByTagName('p');
@@ -17,12 +17,28 @@
         'b' : 'img/blackBishop.png',
         'q' : 'img/blackQueen.png',
         'k' : 'img/blackKing.png',
-        'p' : 'img/blackPawn.png',
+        'p' : 'img/blackPawn.png'
     }
     
-    //Variables used for determining if a King can castle and the sqaures used for castiling
+    const chessNotation = ['a8', 'b8', 'c8', 'd8', 'e8', 'f8', 'g8', 'h8',
+                          'a7', 'b7', 'c7', 'd7', 'e7', 'f7', 'g7', 'h7',
+                          'a6', 'b6', 'c6', 'd6', 'e6', 'f6', 'g6', 'h6',
+                          'a5', 'b5', 'c5', 'd5', 'e5', 'f5', 'g5', 'h5',
+                          'a4', 'b4', 'c4', 'd4', 'e4', 'f4', 'g4', 'h4',
+                          'a3', 'b3', 'c3', 'd3', 'e3', 'f3', 'g3', 'h3',
+                          'a2', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2',
+                          'a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1']
+    
+    //Used to determine if white or black to move
+    let whiteOrBlackMove = true;
+    
+    //Variables used for determining if a King can castle 
     let whiteKingMoved = false;  
     let blackKingMoved = false;
+    let whiteKingRookMoved = false;
+    let whiteQueenRookMoved = false;
+    let blackKingRookMoved = false;
+    let blackQueenRookMoved = false;
     
     
     //Forsyth-Edwards Notation; lower case denotes black, uppercase denotes white and numbers denote number of empty squares
@@ -68,12 +84,12 @@
     
     loadingFEN(startingFEN);
     
+    //Used to determine if a pawn can move forward one or two spaces
     let whitePawns = document.querySelectorAll('.P');
     let blackPawns = document.querySelectorAll('.p');
-    
     let whitePawnStart = new Array();
     let blackPawnStart = new Array();
-    //Used to determine if a pawn can move forward one or two spaces
+    
     for(let i = 0; i< whitePawns.length; i++){
         let parent = whitePawns[i].parentNode;
         let parent2 = blackPawns[i].parentNode;
@@ -81,18 +97,50 @@
         blackPawnStart.push(parent2);
     }
     
+    let enPassantAllowed = false;
+    let enPassantTarget;
+    let enPassantCaptureSquare;
+    let enPassantCapturePiece = new Array();
+    let whiteEnPassantSquares = new Array();
+    let blackEnPassantSquares = new Array();
+    let whiteEnPassantCaptureSquares = new Array();
+    let blackEnPassantCaptureSquares = new Array();
+    
+    for(let i = 0; i< whitePawns.length; i++){
+        let parent = squares[24+i];
+        let parent2 = squares[32+i];
+        whiteEnPassantSquares.push(parent);
+        blackEnPassantSquares.push(parent2);
+    }
+    
+    for(let i = 0; i< whitePawns.length; i++){
+        let parent = squares[16+i];
+        let parent2 = squares[40+i];
+        whiteEnPassantCaptureSquares.push(parent);
+        blackEnPassantCaptureSquares.push(parent2);
+    }
     
     chessBoard.addEventListener('pointerdown', (e) =>  {
         e.target.ondragstart = () => {
             return false;
         };
-        if(e.target.tagName === "P"){
+        if(e.target.tagName === 'P'){
             return false;
         }
         e.target.setPointerCapture(e.pointerId)
         e.target.style.touchAction = 'none';
         let parent = e.target.parentNode;
         let type = e.target.className;
+        if(whiteOrBlackMove === true){
+            if(type === type.toLowerCase()){
+                return false;
+            }
+        }
+        if(whiteOrBlackMove === false){
+            if(type === type.toUpperCase()){
+                return false;
+            }
+        }
         if(type.toLowerCase() === 'b'){
             displayLegalBishopMove(e);
         }
@@ -111,6 +159,9 @@
         }
         if(type.toLowerCase() === 'p'){
             displayLegalPawnMove(e);
+            if(enPassantCapturePiece.includes(e.target)){
+                displayEnPassant(e);
+            }
         }
         
         chessBoard.addEventListener('pointerup', dropPiece);
@@ -241,6 +292,27 @@
                 }
             }
                 
+        }
+        
+        function hasRookMoved(e, type){
+            if(type === 'R'){
+                if(e.target.parentNode === squares[63]){
+                    return whiteKingRookMoved = true;
+                }
+                if(e.target.parentNode === squares[56]){
+                    return whiteQueenRookMoved = true;
+                }
+            }
+            if(type === 'r'){
+                if(e.target.parentNode === squares[7]){
+                    return blackKingRookMoved = true;
+                }
+                if(e.target.parentNode === squares[0]){
+                    return blackQueenRookMoved = true;
+                }
+            }
+            
+            return false;
         }
         
         function displayLegalKnightMove(e){
@@ -393,22 +465,27 @@
             //Whether a king can legally castle
             if(type === 'K'){
                 if(whiteKingMoved === false){
-                    position = document.elementFromPoint(eastX,oldY);
-                    if(!position.hasChildNodes()){
-                        kingSideCastleSquare = document.elementFromPoint((eastX + horizontal),oldY)
-                        if(!kingSideCastleSquare.hasChildNodes()){
-                            kingSideCastleSquare.classList.add('allowed');
+                    if(whiteKingRookMoved === false){
+                        position = document.elementFromPoint(eastX,oldY);
+                        if(!position.hasChildNodes()){
+                            kingSideCastleSquare = document.elementFromPoint((eastX + horizontal),oldY)
+                            if(!kingSideCastleSquare.hasChildNodes()){
+                                kingSideCastleSquare.classList.add('allowed');
+                            }
                         }
                     }
-                    position = document.elementFromPoint(westX,oldY);
-                    if(!position.hasChildNodes()){
-                        position = document.elementFromPoint(westX - horizontal,oldY);
+                    
+                    if(whiteQueenRookMoved === false){
+                        position = document.elementFromPoint(westX,oldY);
                         if(!position.hasChildNodes()){
-                            position = document.elementFromPoint(westX - (horizontal*2),oldY);
-                             if(!position.hasChildNodes()){
-                                queenSideCastleSquare = document.elementFromPoint(westX - horizontal,oldY);
-                                queenSideCastleSquare.classList.add('allowed');
-                             }
+                            position = document.elementFromPoint(westX - horizontal,oldY);
+                            if(!position.hasChildNodes()){
+                                position = document.elementFromPoint(westX - (horizontal*2),oldY);
+                                 if(!position.hasChildNodes()){
+                                    queenSideCastleSquare = document.elementFromPoint(westX - horizontal,oldY);
+                                    queenSideCastleSquare.classList.add('allowed');
+                                 }
+                            }
                         }
                     }
                 }
@@ -416,21 +493,26 @@
             
             if(type === 'k'){
                 if(blackKingMoved === false){
-                    position = document.elementFromPoint(eastX,oldY);
-                    if(!position.hasChildNodes()){
-                        kingSideCastleSquare = document.elementFromPoint((eastX + horizontal),oldY)
-                        if(!kingSideCastleSquare.hasChildNodes()){
-                            kingSideCastleSquare.classList.add('allowed');
+                    if(blackKingRookMoved === false){
+                        position = document.elementFromPoint(eastX,oldY);
+                        if(!position.hasChildNodes()){
+                            kingSideCastleSquare = document.elementFromPoint((eastX + horizontal),oldY)
+                            if(!kingSideCastleSquare.hasChildNodes()){
+                                kingSideCastleSquare.classList.add('allowed');
+                            }
                         }
                     }
-                    position = document.elementFromPoint(westX,oldY);
-                    if(!position.hasChildNodes()){
-                        position = document.elementFromPoint(westX - horizontal,oldY);
+                    
+                    if(blackQueenRookMoved === false){
+                        position = document.elementFromPoint(westX,oldY);
                         if(!position.hasChildNodes()){
-                            position = document.elementFromPoint(westX - (horizontal*2),oldY);
+                            position = document.elementFromPoint(westX - horizontal,oldY);
                             if(!position.hasChildNodes()){
-                                queenSideCastleSquare = document.elementFromPoint(westX - horizontal,oldY);
-                                queenSideCastleSquare.classList.add('allowed');
+                                position = document.elementFromPoint(westX - (horizontal*2),oldY);
+                                 if(!position.hasChildNodes()){
+                                    queenSideCastleSquare = document.elementFromPoint(westX - horizontal,oldY);
+                                    queenSideCastleSquare.classList.add('allowed');
+                                 }
                             }
                         }
                     }
@@ -516,7 +598,6 @@
         function displayLegalPawnMove(e){
             const vertical = e.target.parentElement.clientHeight;
             const horizontal = e.target.parentElement.clientWidth;
-            let hasMoved = e.target.classList;
             let blackOrWhite = e.target.className;
             let oldX = e.target.parentElement.getBoundingClientRect().left;
             let oldY = e.target.parentElement.getBoundingClientRect().top;
@@ -526,26 +607,6 @@
             let northY = oldY - horizontal;
             let position;
             if(blackOrWhite === 'P'){
-                position = document.elementFromPoint(oldX,northY);
-                if(position !== null && position !== body[0] && position !== html[0]){
-                    position.classList.add('allowed')
-                    for(let i = 0; i < whitePawnStart.length; i++){
-                        if(parent === whitePawnStart[i]){
-                            northY -=vertical;
-                            position = document.elementFromPoint(oldX,northY);
-                            position.classList.add('allowed');
-                            return
-                        }
-                    }
-                }
-                
-                position = document.elementFromPoint(oldX,northY)
-                if(position !== null && position !== body[0] && position !== html[0]){
-                    if(position.hasChildNodes()){
-                        position.classList.remove('allowed');
-                    }
-                }
-                
                 position = document.elementFromPoint(westX,northY)
                 if(position !== null && position !== body[0] && position !== html[0]){
                     if(position.hasChildNodes()){
@@ -562,30 +623,32 @@
                     }
                 }
                 
-                
-            }
-            
-            if(blackOrWhite === 'p'){
-                position = document.elementFromPoint(oldX,southY);
+                position = document.elementFromPoint(oldX,northY);
                 if(position !== null && position !== body[0] && position !== html[0]){
-                    position.classList.add('allowed');
-                    for(let i = 0; i < whitePawnStart.length; i++){
-                        if(parent === blackPawnStart[i]){
-                            southY +=vertical;
-                            position = document.elementFromPoint(oldX,southY);
+                    position.classList.add('allowed')
+                }
+                
+                position = document.elementFromPoint(oldX,northY)
+                if(position !== null && position !== body[0] && position !== html[0]){
+                    if(position.hasChildNodes()){
+                        position.classList.remove('allowed');
+                        return
+                    }
+                }
+                
+                for(let i = 0; i < whitePawnStart.length; i++){
+                    if(parent === whitePawnStart[i]){
+                        northY -=vertical;
+                        position = document.elementFromPoint(oldX,northY);
+                        if(!position.hasChildNodes()){
                             position.classList.add('allowed');
-                            return
                         }
                     }
                 }
                 
-                position = document.elementFromPoint(oldX,southY);
-                if(position !== null && position !== body[0] && position !== html[0]){
-                    if(position.hasChildNodes()){
-                        position.classList.remove('allowed');
-                    }
-                }
-                
+            }
+            
+            if(blackOrWhite === 'p'){
                 position = document.elementFromPoint(eastX,southY);
                 if(position !== null && position !== body[0] && position !== html[0]){
                     if(position.hasChildNodes()){
@@ -602,10 +665,110 @@
                     }
                 }
                 
+                position = document.elementFromPoint(oldX,southY);
+                if(position !== null && position !== body[0] && position !== html[0]){
+                    position.classList.add('allowed');
+                    
+                }
+                
+                position = document.elementFromPoint(oldX,southY);
+                if(position !== null && position !== body[0] && position !== html[0]){
+                    if(position.hasChildNodes()){
+                        position.classList.remove('allowed');
+                        return
+                    }
+                }
+                
+                for(let i = 0; i < whitePawnStart.length; i++){
+                    if(parent === blackPawnStart[i]){
+                        southY +=vertical;
+                        position = document.elementFromPoint(oldX,southY);
+                        if(!position.hasChildNodes()){
+                            position.classList.add('allowed');
+                        }
+                    }
+                } 
             }
-
         }
         
+        function isWhiteAllowedEnPassant(e,clone){
+            for(let i = 0; i < whiteEnPassantSquares.length; i++){
+                if(parent === blackPawnStart[i]){
+                    if(clone.parentElement === whiteEnPassantSquares[i]){
+                        if(i-1 >= 0 && i-1 < whiteEnPassantSquares.length){
+                            if(whiteEnPassantSquares[i-1].childElementCount !== 0){
+                                if(whiteEnPassantSquares[i-1].children[0].className === 'P'){
+                                    enPassantAllowed = true;
+                                    enPassantTarget = whiteEnPassantSquares[i].children[0];
+                                    enPassantCaptureSquare = whiteEnPassantCaptureSquares[i];
+                                    enPassantCapturePiece[0] = whiteEnPassantSquares[i-1].children[0];
+                                }
+                            }
+                        }
+                        if(i+1 >= 0 && i+1 < whiteEnPassantSquares.length){
+                            if(whiteEnPassantSquares[i+1].childElementCount !== 0){
+                                if(whiteEnPassantSquares[i+1].children[0].className === 'P'){
+                                    enPassantAllowed = true;
+                                    enPassantTarget = whiteEnPassantSquares[i].children[0];
+                                    enPassantCaptureSquare = whiteEnPassantCaptureSquares[i];
+                                    enPassantCapturePiece[1] = whiteEnPassantSquares[i+1].children[0];
+                                }
+                            }
+                        }
+                    }
+                }    
+            }
+        }
+        
+        function isBlackAllowedEnPassant(e,clone){
+            for(let i = 0; i < blackEnPassantSquares.length; i++){
+                if(parent === whitePawnStart[i]){
+                    if(clone.parentElement === blackEnPassantSquares[i]){
+                        if(i-1 >= 0 && i-1 < blackEnPassantSquares.length){
+                            if(blackEnPassantSquares[i-1].childElementCount !== 0){
+                                if(blackEnPassantSquares[i-1].children[0].className === 'p'){
+                                    enPassantAllowed = true;
+                                    enPassantTarget = blackEnPassantSquares[i].children[0];
+                                    enPassantCaptureSquare = blackEnPassantCaptureSquares[i];
+                                    enPassantCapturePiece[0] = blackEnPassantSquares[i-1].children[0];
+                                }
+                            }
+                        }
+                        if(i+1 >= 0 && i+1 < blackEnPassantSquares.length){
+                            if(blackEnPassantSquares[i+1].childElementCount !== 0){
+                                if(blackEnPassantSquares[i+1].children[0].className === 'p'){
+                                    enPassantAllowed = true;
+                                    enPassantTarget = blackEnPassantSquares[i].children[0];
+                                    enPassantCaptureSquare = blackEnPassantCaptureSquares[i];
+                                    enPassantCapturePiece[1] = blackEnPassantSquares[i+1].children[0];
+                                }
+                            }
+                        }
+                    }
+                }   
+            }
+        }
+        
+        function displayEnPassant(e){
+            if(enPassantAllowed === true){
+                enPassantCaptureSquare.classList.add('enPassant');
+            }
+        }
+        
+        function removeEnPassant(e, clone){
+            if(enPassantAllowed === true){
+                if(clone.parentNode === e.target.parentNode){
+                    let index = enPassantCapturePiece.indexOf(e.target)
+                    enPassantCapturePiece[index] = clone;
+                    enPassantCaptureSquare.classList.remove('enPassant');
+                    return
+                }
+            }
+            if(enPassantCaptureSquare){
+                enPassantCaptureSquare.classList.remove('enPassant');
+            }
+            return enPassantAllowed === false;
+        }
                      
         function checkCapture(e, position){ 
             const regex = new RegExp(/[A-Z]/)  //Checking for uppercase letter to denote if its a white piece
@@ -623,6 +786,24 @@
                 position[1].remove();
                 position[2].appendChild(clone)
             }
+            
+            if(position[1].classList.contains('enPassant')){
+                enPassantTarget.remove();
+                position[1].appendChild(clone)
+                enPassantAllowed = false;
+            }
+            
+        }
+        
+        function changeTurn(e, clone){
+            if(clone.parentNode === e.target.parentNode){
+                return
+            }
+            if(whiteOrBlackMove === true){
+                return whiteOrBlackMove = false;
+            }
+            return whiteOrBlackMove = true;
+            
         }
         
         function dropPiece(e) {
@@ -636,12 +817,25 @@
             }
             capturePiece(e, position, clone);
             castleTheKing(e, clone);
-            if(type === 'K'){
+            if(type.toLowerCase() === 'k'){
                 hasKingMoved(e, type, clone);
             }
-            if(type === 'k'){
-                hasKingMoved(e, type, clone);
+            if(type.toLowerCase() === 'r'){
+                hasRookMoved(e, type);
             }
+            if(type === 'P'){
+                isBlackAllowedEnPassant(e, clone);
+            }
+            if(type === 'p'){
+                isWhiteAllowedEnPassant(e, clone);
+            }
+            removeEnPassant(e, clone);
+            if(type.toLowerCase() !== 'p'){
+                enPassantAllowed = false;
+            }
+            changeTurn(e, clone);
+            console.log(enPassantAllowed)
+            console.log(enPassantCaptureSquare)
             e.target.remove();
             chessBoard.removeEventListener('pointermove', movePiece);
             chessBoard.removeEventListener('pointerup', dropPiece);
